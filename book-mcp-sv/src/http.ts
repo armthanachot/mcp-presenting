@@ -1,24 +1,21 @@
 import { BookApiClient } from "./book-api-client";
-import { getBookApiBaseUrl, getDemoOAuthConfig, getHttpConfig } from "./config";
-import { DemoOAuthServer } from "./demo-oauth";
+import { getHttpConfig } from "./config";
 import { createMcpHttpHandler } from "./http-app";
 
 try {
-  const client = new BookApiClient(getBookApiBaseUrl());
+  const client = new BookApiClient(process.env.BOOK_API_BASE_URL!);
   const config = getHttpConfig();
-  const oauthConfig = getDemoOAuthConfig();
-  const oauth = oauthConfig ? new DemoOAuthServer(oauthConfig) : undefined;
   const server = Bun.serve({
     hostname: config.hostname,
     port: config.port,
-    fetch: createMcpHttpHandler(client, {
-      allowedHosts: config.allowedHosts,
-      allowedOrigins: config.allowedOrigins,
-      ...(oauth ? { oauth } : {}),
-    }),
+    fetch: createMcpHttpHandler(client,
+      {
+        allowedHosts: config.allowedHosts,
+        allowedOrigins: config.allowedOrigins,
+      }
+    ),
   });
   console.log(`book-mcp-sv Streamable HTTP listening on ${server.url.href}mcp`);
-  if (oauth) console.log(`book-mcp-sv OAuth discovery issuer: ${oauth.issuer}`);
 } catch (error) {
   const message = error instanceof Error ? error.message : "Unknown startup failure";
   console.error(`book-mcp-sv failed to start: ${message}`);

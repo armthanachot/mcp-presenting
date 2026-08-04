@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-
+import * as p from "path"
+import * as fs from 'fs'
 import { BookApiClient, BookApiError } from "./book-api-client";
 import {
   compareBooksInputSchema,
@@ -98,9 +99,9 @@ function toSearchQuery(input: Parameters<typeof searchBooksInputSchema.parse>[0]
 }
 
 export function createBookMcpServer(client: BookApiClient): McpServer {
-  const server = new McpServer({ 
-    name: "book-mcp-sv", 
-    version: "0.1.0" 
+  const server = new McpServer({
+    name: "book-mcp-sv",
+    version: "0.1.0"
   });
 
   server.registerTool("search_books", {
@@ -189,5 +190,33 @@ export function createBookMcpServer(client: BookApiClient): McpServer {
     },
   }, ({ bookId }) => safely(() => client.deleteBook(bookId)));
 
+  registerResources(server)
+
   return server;
+}
+
+const registerResources = (server: McpServer) => {
+
+  server.registerResource(
+    "investor guide",
+    "investment://documents/investor_guide_book.pdf",
+    {
+      title: "Investor Guide",
+      description: "Document for beginner Investor",
+      mimeType: "application/pdf"
+    },
+    async (uri) => {
+      const filePath = p.resolve(process.cwd(), "docs/investor_guide_book.pdf")
+      const pdfBuffer = fs.readFileSync(filePath);
+      return {
+        contents: [
+          {
+            uri: uri.href,
+            mimeType: "application/pdf",
+            blob: pdfBuffer.toString("base64"),
+          }
+        ]
+      }
+    }
+  )
 }

@@ -50,42 +50,42 @@ export function createMcpHttpHandler(client: BookApiClient, options: McpHttpSecu
   const allowedHosts = new Set(options.allowedHosts ?? ["127.0.0.1", "localhost"]);
   const allowedOrigins = new Set(options.allowedOrigins ?? []);
   return async function handle(request: Request): Promise<Response> {
-    const url = new URL(request.url);
-    if (url.pathname === "/health" && request.method === "GET") {
-      return Response.json({
-        status: "ok",
-        transport: "streamable-http",
-        sessionMode: "stateless",
-        authentication: options.oauth ? "oauth" : "none",
-      });
-    }
+    // const url = new URL(request.url);
+    // if (url.pathname === "/health" && request.method === "GET") {
+    //   return Response.json({
+    //     status: "ok",
+    //     transport: "streamable-http",
+    //     sessionMode: "stateless",
+    //     authentication: options.oauth ? "oauth" : "none",
+    //   });
+    // }
 
-    const hostname = requestHostname(request);
-    if (hostname === undefined || !allowedHosts.has(hostname)) {
-      return Response.json({ error: "Host is not allowed" }, { status: 403 });
-    }
-    const origin = request.headers.get("origin");
-    if (origin !== null && !allowedOrigins.has(origin)) {
-      return Response.json({ error: "Origin is not allowed" }, { status: 403 });
-    }
+    // const hostname = requestHostname(request);
+    // if (hostname === undefined || !allowedHosts.has(hostname)) {
+    //   return Response.json({ error: "Host is not allowed" }, { status: 403 });
+    // }
+    // const origin = request.headers.get("origin");
+    // if (origin !== null && !allowedOrigins.has(origin)) {
+    //   return Response.json({ error: "Origin is not allowed" }, { status: 403 });
+    // }
 
-    const contentLength = Number(request.headers.get("content-length") ?? "0");
-    if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) {
-      return Response.json({ error: "Request body is too large" }, { status: 413 });
-    }
+    // const contentLength = Number(request.headers.get("content-length") ?? "0");
+    // if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) {
+    //   return Response.json({ error: "Request body is too large" }, { status: 413 });
+    // }
 
-    if (url.pathname === "/mcp") {
-      const unauthorized = options.oauth?.authorizeMcpRequest(request);
-      if (unauthorized) return unauthorized;
-    }
+    // if (url.pathname === "/mcp") {
+    //   const unauthorized = options.oauth?.authorizeMcpRequest(request);
+    //   if (unauthorized) return unauthorized;
+    // }
 
     const bounded = await withBoundedBody(request);
     if (bounded instanceof Response) return bounded;
 
-    const oauthResponse = await options.oauth?.handleRoute(bounded);
-    if (oauthResponse) return oauthResponse;
+    // const oauthResponse = await options.oauth?.handleRoute(bounded);
+    // if (oauthResponse) return oauthResponse;
 
-    if (url.pathname !== "/mcp") return Response.json({ error: "Not found" }, { status: 404 });
+    // if (url.pathname !== "/mcp") return Response.json({ error: "Not found" }, { status: 404 });
 
     const transport = new WebStandardStreamableHTTPServerTransport({
       enableJsonResponse: true,
