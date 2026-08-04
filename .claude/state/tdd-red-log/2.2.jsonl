@@ -1,0 +1,1 @@
+{"task_id":"2.2","phase":"red","command":"bun test","exit_code":1,"evidence":"0 pass, 2 fail: missing @modelcontextprotocol/sdk/client/index.js and '../src/book-api-client' before book-mcp-sv implementation"}

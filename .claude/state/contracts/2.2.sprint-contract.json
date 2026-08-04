@@ -1,0 +1,74 @@
+{
+  "schema_version": "sprint-contract.v1",
+  "generated_at": "2026-08-03T15:15:27Z",
+  "source": {
+    "plans_file": "Plans.md",
+    "task_id": "2.2",
+    "spec_path": "spec.md"
+  },
+  "task": {
+    "id": "2.2",
+    "title": "`[lane:gate] [tdd:required]` Build `book-mcp-sv` with `@modelcontextprotocol/sdk`, REST-only tools, stdio and Streamable HTTP entrypoints, and sanitized errors.",
+    "definition_of_done": "`book-mcp-sv` lists and calls all specified tools through HTTP and passes tests plus TypeScript checks.",
+    "depends_on": [
+      "1.1"
+    ],
+    "status_at_generation": "cc:WIP"
+  },
+  "contract": {
+    "checks": [
+      {
+        "id": "dod-primary",
+        "source": "Plans.md.DoD",
+        "description": "`book-mcp-sv` lists and calls all specified tools through HTTP and passes tests plus TypeScript checks."
+      },
+      {
+        "id": "reviewer-check",
+        "source": "reviewer",
+        "description": "Verify contract DoD with tests and typecheck"
+      }
+    ],
+    "non_goals": [],
+    "runtime_validation": [],
+    "browser_validation": [],
+    "risk_flags": [
+      "ux-regression"
+    ],
+    "tdd_required": true,
+    "test_framework": "none",
+    "test_todo_list": [
+      "normal",
+      "boundary",
+      "error"
+    ],
+    "skip_tdd_reason": null,
+    "tdd_red_log": ".claude/state/tdd-red-log/2.2.jsonl",
+    "research_evidence": "Official MCP TypeScript SDK v1 documentation and independent Product/Architecture, Security, and QA/Skeptic reviews"
+  },
+  "advisor": {
+    "enabled": true,
+    "mode": "on-demand",
+    "max_consults": 3,
+    "retry_threshold": 2,
+    "pre_escalation_consult": true,
+    "triggers": [],
+    "model_policy": {
+      "claude_default": "opus",
+      "codex_default": "gpt-5.4"
+    }
+  },
+  "review": {
+    "status": "approved",
+    "reviewer_profile": "runtime",
+    "max_iterations": 3,
+    "reviewer_notes": [],
+    "gaps": [],
+    "followups": [],
+    "approved_at": "2026-08-03T15:15:36Z",
+    "review_artifact": {
+      "verdict": "APPROVE",
+      "findings": [],
+      "runtime_evidence": "13 tests passed, typecheck passed, real Streamable HTTP MCP-to-REST smoke passed with 9 tools"
+    }
+  }
+}

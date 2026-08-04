@@ -1,0 +1,1 @@
+{"task_id":"2.1","phase":"red","command":"bun test","exit_code":1,"evidence":"0 pass, 2 fail: Cannot find module '../src/app' and '../src/validation' before book-api implementation"}
