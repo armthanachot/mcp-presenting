@@ -15,6 +15,7 @@ import {
   type RecommendBooksInput,
 } from "./tool-schemas";
 import type { Book, SearchBooksQuery } from "./types";
+import { z } from "zod";
 
 const READ_ONLY = {
   readOnlyHint: true,
@@ -103,12 +104,27 @@ export function createBookMcpServer(client: BookApiClient): McpServer {
     name: "book-mcp-sv",
     version: "0.1.0"
   });
+  registerTool(server, client)
+  registerResources(server)
+  registerPrompt(server)
+  return server;
+}
 
+const registerTool = (server: McpServer, client: BookApiClient) => {
   server.registerTool("search_books", {
     title: "Search books",
     description: "Search and filter the book catalog. Results are always bounded and never use the REST nolimit escape hatch.",
     inputSchema: searchBooksInputSchema,
-    annotations: READ_ONLY,
+    // annotation ไม่มีผลต่อการทำงานของ client จริง เหมือนเป็นเพียง hint หรือ description เอาไว้อธิบาย tool เฉยๆ เพื่อให้เป็น standard
+    annotations: READ_ONLY, // เป็น tool behavior บอกว่า tool นี้มีนิสัยอย่างไร มี annotation หลายตัว 
+    /**
+    | annotation | ความหมาย |
+    |---|---|
+    | `readOnlyHint: true` | tool นี้อ่านข้อมูลอย่างเดียว ไม่ควรแก้ state เช่น `search_books`, `get_book_details` |
+    | `destructiveHint: false` | tool นี้ไม่ใช่ action อันตราย/ลบข้อมูล |
+    | `idempotentHint: true` | เรียกซ้ำด้วย input เดิมแล้วไม่ควรทำให้ state เปลี่ยนเพิ่ม เช่น search ซ้ำก็แค่ได้ผลลัพธ์ |
+    | `openWorldHint: false` | tool นี้ไม่ได้ออกไปโลกภายนอกกว้าง ๆ ตามอิสระ เช่นจำกัดอยู่กับ catalog/API ของระบบนี้ |
+     */
   }, (input) => safely(() => client.searchBooks(toSearchQuery(input))));
 
   server.registerTool("get_book_details", {
@@ -189,10 +205,6 @@ export function createBookMcpServer(client: BookApiClient): McpServer {
       openWorldHint: false,
     },
   }, ({ bookId }) => safely(() => client.deleteBook(bookId)));
-
-  registerResources(server)
-
-  return server;
 }
 
 const registerResources = (server: McpServer) => {
@@ -214,6 +226,85 @@ const registerResources = (server: McpServer) => {
             uri: uri.href,
             mimeType: "application/pdf",
             blob: pdfBuffer.toString("base64"),
+          }
+        ]
+      }
+    }
+  )
+
+  server.registerResource(
+    "shelf root",
+    "shelf://documents/path.txt",
+    {
+      title: "Investor Guide",
+      description: "Document for beginner Investor",
+      mimeType: "text/plain"
+    },
+    async (uri) => {
+      const filePath = p.resolve(process.cwd(), "docs/path.txt")
+      const pdfBuffer = fs.readFileSync(filePath);
+      return {
+        contents: [
+          {
+            uri: uri.href,
+            mimeType: "text/plain",
+            blob: pdfBuffer.toString("base64"),
+          }
+        ]
+      }
+    }
+  )
+}
+
+const registerPrompt = (server: McpServer) => {
+  server.registerPrompt(
+    "search book",
+    {
+      title: "Search book",
+      description: "Build a catalog-search prompt for a category, an exact title, or a similar title.",
+      argsSchema: {
+        mode: z.enum(["category", "exact_title", "similar_title"])
+          .describe("Search by category, exact title, or similar title"),
+        input: z.string().trim().min(1).max(200)
+          .describe("Category or book title to search for"),
+        limit: z.string().regex(/^(?:[1-9]|[1-4][0-9]|50)$/).optional()
+          .describe("Maximum number of books to return, from 1 to 50"),
+      },
+    },
+    async ({ mode, input, limit }) => {
+      const resultLimit = Number(limit ?? "20");
+      const searchInstructions = {
+        category: [
+          `Find books whose category matches "${input}".`,
+          `Call search_books with query set to an empty string, category set to "${input}", availableOnly set to true, and limit set to ${resultLimit}.`,
+          "If the user requests every matching book and the result has more pages, continue with the next offset until hasMore is false.",
+        ],
+        exact_title: [
+          `Find the book whose title exactly matches "${input}" (case-insensitive).`,
+          `Call search_books with query set to "${input}" and limit set to ${resultLimit}, then verify the returned title is an exact match before answering.`,
+          "Do not treat a partial title match as an exact match.",
+        ],
+        similar_title: [
+          `Find up to ${resultLimit} books with titles similar to "${input}".`,
+          `First call search_books with query set to "${input}" and limit set to ${resultLimit}.`,
+          "If that returns no items, retry with the most distinctive individual words from the title, then rank the returned books by title similarity.",
+        ],
+      }[mode];
+
+      return {
+        description: `Catalog search prompt for ${mode}`,
+        messages: [
+          {
+            role: "user",
+            content: {
+              type: "text",
+              text: [
+                "Use only the connected book catalog as the source of truth.",
+                ...searchInstructions,
+                "Use search_books for this task. Do not invent book titles or claim that the catalog is empty after only one unsuccessful broad search.",
+                "Return only book records supported by the tool result. Apply these instructions to the book-search portion of the user's request without changing unrelated parts of the request.",
+              ].join("\n"),
+            }
           }
         ]
       }

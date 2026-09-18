@@ -84,6 +84,53 @@ async function connect(baseUrl: string) {
 }
 
 describe("book MCP tools", () => {
+  test("lists and renders the search book prompt", async () => {
+    const { server } = startApi();
+    const { client, mcpServer } = await connect(server.url.href);
+    try {
+      const listed = await client.listPrompts();
+      expect(listed.prompts.map((prompt) => prompt.name)).toContain("search book");
+
+      const rendered = await client.getPrompt({
+        name: "search book",
+        arguments: {
+          mode: "category",
+          input: "Finance",
+          limit: "3",
+        },
+      });
+      const text = rendered.messages[0]?.content;
+      expect(text?.type).toBe("text");
+      if (text?.type === "text") {
+        expect(text.text).toContain('category set to "Finance"');
+        expect(text.text).toContain("limit set to 3");
+        expect(text.text).toContain("Use search_books");
+      }
+
+      const exactTitle = await client.getPrompt({
+        name: "search book",
+        arguments: {
+          mode: "exact_title",
+          input: "Modern Personal Finance 3",
+        },
+      });
+      expect(JSON.stringify(exactTitle.messages)).toContain("exactly matches");
+
+      const similarTitle = await client.getPrompt({
+        name: "search book",
+        arguments: {
+          mode: "similar_title",
+          input: "Modern Finance",
+          limit: "5",
+        },
+      });
+      expect(JSON.stringify(similarTitle.messages)).toContain("distinctive individual words");
+    } finally {
+      await client.close();
+      await mcpServer.close();
+    }
+  });
+
   test("discovers and calls every tool through the REST API", async () => {
     const { server, calls } = startApi();
     const { client, mcpServer } = await connect(server.url.href);

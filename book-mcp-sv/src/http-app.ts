@@ -79,7 +79,7 @@ export function createMcpHttpHandler(client: BookApiClient, options: McpHttpSecu
     //   if (unauthorized) return unauthorized;
     // }
 
-    const bounded = await withBoundedBody(request);
+    const bounded = await withBoundedBody(request); //function check เพื่อ จำกัด body size 
     if (bounded instanceof Response) return bounded;
 
     // const oauthResponse = await options.oauth?.handleRoute(bounded);
@@ -93,6 +93,12 @@ export function createMcpHttpHandler(client: BookApiClient, options: McpHttpSecu
     const server = createBookMcpServer(client);
     try {
       await server.connect(transport);
+      /**
+        bounded.method   // POST, GET ฯลฯ
+        bounded.url      // เช่น http://localhost:3000/mcp
+        bounded.headers  // content-type, accept, session id ฯลฯ
+        bounded.body     // JSON-RPC payload ของ MCP
+       */
       return await transport.handleRequest(bounded);
     } catch {
       return Response.json({

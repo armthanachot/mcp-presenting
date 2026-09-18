@@ -1,0 +1,10 @@
+book-mcp-sv
+
+เริ่มอธิบายจาก file http.ts
+
+เริ่มจาก new api client (อันนี้เป็น code ที่ generate จาก AI เพื่อมา demo เท่านั้น สามารถปรับเปลี่ยนได้ตามความเหมาะสม)
+
+ต่อไป ก็คือการ new serve ของ Bun
+    - ในส่วนของ fetch ก็คือ HTTP request handler คือเมื่อมี request เข้ามา มันจะส่ง request เข้ามาประมวลผลที่ createMcpHttpHandler
+
+    
